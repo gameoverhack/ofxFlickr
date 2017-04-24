@@ -190,20 +190,23 @@ namespace ofxFlickr {
         vector<string> tags;
     };
     
+	// should be updated as more calls added to main API class!
+	enum CallType {
+		FLICKR_SEARCH = 0,
+		FLICKR_UPLOAD,
+		FLICKR_GETMEDIA
+	};
+
     class APIEvent : public ofEventArgs {
     public:
         
-        string resultString;
+		bool success = false;
+		CallType callType;
+
+        string resultString = "";
         vector<Media> results;
         
         static ofEvent <APIEvent> events;
-    };
-    
-    // should be updated as more calls added to main API class!
-    enum CallType {
-        FLICKR_SEARCH = 0,
-        FLICKR_UPLOAD,
-        FLICKR_GETMEDIA
     };
     
     // small wrapper for thread queue
@@ -244,7 +247,9 @@ namespace ofxFlickr {
          * @param {std::string} api_secret
          * @param {ofxFlickr::Permissions} perms
          */
-        bool authenticate( string api_key, string api_secret, Permissions perms = FLICKR_WRITE );
+        bool authenticate( string api_key, string api_secret, Permissions perms = FLICKR_WRITE, bool bForceNoReauthenticate = true );
+
+		bool getIsAuthenticated();
         
         /**
          * Check API token
@@ -275,8 +280,9 @@ namespace ofxFlickr {
         /**
          * Search photos!
          * @param {std::string} text Text to search
+		 * @param {std::string} user_id specific user to search
          */
-        vector<Media> search( string text );
+        vector<Media> search( string text, string user_id = "" );
         
         /**
          * Search photos!
@@ -284,11 +290,26 @@ namespace ofxFlickr {
          */
         vector<Media> search( Query query );
         
+		/**
+		* Threaded Search photos!
+		* @param {std::string} text Text to search
+		* @param {std::string} user_id specific user to search
+		*/
+		void searchThreaded(string text, string user_id, int page = 0);
+
+		/**
+		* Threaded Search photos!
+		* @param {ofxFlickr::Query} query
+		*/
+		void searchThreaded(Query query);
+
+		string getCallTypeAsString(const CallType& type);
+		CallType methodToCallType(const string& method);
+
     protected:
         
         vector <APICall> APIqueue;
         void threadedFunction();
-        CallType methodToCallType( string method );
         
     private:
         bool                bAuthenticated;
